@@ -1,0 +1,27 @@
+﻿@model LoginViewModel
+@{
+    ViewData["Title"] = "Index";
+}
+
+
+<h2 class="text-center">Login</h2>
+<div class="row">
+    <div class="col-md-6 col-md-offset-3">
+        <div class="jumbotron">
+            <form role="form" asp-action="Login" asp-controller="User" method="post">
+                <div class="form-group">
+                    <label for="login">User Name</label>
+                    <input type="text" name="login" asp-for="login" autocomplete="off" class="form-control input-sm" placeholder="User Name">
+                    <span asp-validation-for="login" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" name="password" asp-for="password" autocomplete="off" class="form-control input-sm" placeholder="Password">
+                    <span asp-validation-for="password" class="text-danger"></span>
+                </div>
+                <input type="submit" value="Login" class="btn btn-info btn-block">
+            </form>
+        </div>
+    </div>
+
+</div>

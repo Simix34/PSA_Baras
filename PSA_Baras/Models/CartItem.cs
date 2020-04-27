@@ -19,7 +19,9 @@ namespace PSA_Baras.Models
 		public int cartId { get; set; }
 		public Cart cart { get; set; }
 
-		public ICollection<Cocktail> cocktails { get; set; }
+		[ForeignKey("Coctail")]
+		public int cocktailId { get; set; }
+		public Cocktail cocktail { get; set; }
 	}
 	
 }

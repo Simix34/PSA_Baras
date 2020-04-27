@@ -22,12 +22,9 @@ namespace PSA_Baras.Models
 
 		public ICollection<Comment> comments { get; set; }
 
-		public ICollection<Product> products { get; set; }
+		public ICollection<CocktailProduct> cocktailProducts { get; set; }
 
-		[ForeignKey("CartItem")]
-		public int cart_itemId { get; set; }
-		public CartItem cart_item { get; set; }
-
+		public ICollection<CartItem> CartItems { get; set; }
 	}
 	
 }

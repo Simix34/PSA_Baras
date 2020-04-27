@@ -10,26 +10,23 @@ using PSA_Baras.Models;
 
 namespace PSA_Baras.Controllers
 {
-    public class CocktailsController : Controller
+    public class CocktailProductsController : Controller
     {
         private readonly BarasDBContext _context;
 
-        public CocktailsController(BarasDBContext context)
+        public CocktailProductsController(BarasDBContext context)
         {
             _context = context;
         }
 
-        // GET: Cocktails
+        // GET: CocktailProducts
         public async Task<IActionResult> Index()
         {
-            var cocktails = await _context.Cocktail
-                .Include(o => o.cocktailProducts)
-                .ThenInclude(o => o.product)
-                .ToListAsync();
-            return View(cocktails);
+            var barasDBContext = _context.CocktailProduct.Include(c => c.cocktail).Include(c => c.product);
+            return View(await barasDBContext.ToListAsync());
         }
 
-        // GET: Cocktails/Details/5
+        // GET: CocktailProducts/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -37,39 +34,45 @@ namespace PSA_Baras.Controllers
                 return NotFound();
             }
 
-            var cocktail = await _context.Cocktail
+            var cocktailProduct = await _context.CocktailProduct
+                .Include(c => c.cocktail)
+                .Include(c => c.product)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (cocktail == null)
+            if (cocktailProduct == null)
             {
                 return NotFound();
             }
 
-            return View(cocktail);
+            return View(cocktailProduct);
         }
 
-        // GET: Cocktails/Create
+        // GET: CocktailProducts/Create
         public IActionResult Create()
         {
+            ViewData["cocktailId"] = new SelectList(_context.Cocktail, "Id", "Id");
+            ViewData["productId"] = new SelectList(_context.Product, "Id", "Id");
             return View();
         }
 
-        // POST: Cocktails/Create
+        // POST: CocktailProducts/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,title,price,color,proof,category")] Cocktail cocktail)
+        public async Task<IActionResult> Create([Bind("Id,unit,quantity,cocktailId,productId")] CocktailProduct cocktailProduct)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(cocktail);
+                _context.Add(cocktailProduct);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(cocktail);
+            ViewData["cocktailId"] = new SelectList(_context.Cocktail, "Id", "Id", cocktailProduct.cocktailId);
+            ViewData["productId"] = new SelectList(_context.Product, "Id", "Id", cocktailProduct.productId);
+            return View(cocktailProduct);
         }
 
-        // GET: Cocktails/Edit/5
+        // GET: CocktailProducts/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -77,22 +80,24 @@ namespace PSA_Baras.Controllers
                 return NotFound();
             }
 
-            var cocktail = await _context.Cocktail.FindAsync(id);
-            if (cocktail == null)
+            var cocktailProduct = await _context.CocktailProduct.FindAsync(id);
+            if (cocktailProduct == null)
             {
                 return NotFound();
             }
-            return View(cocktail);
+            ViewData["cocktailId"] = new SelectList(_context.Cocktail, "Id", "Id", cocktailProduct.cocktailId);
+            ViewData["productId"] = new SelectList(_context.Product, "Id", "Id", cocktailProduct.productId);
+            return View(cocktailProduct);
         }
 
-        // POST: Cocktails/Edit/5
+        // POST: CocktailProducts/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,title,price,color,proof,category")] Cocktail cocktail)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,unit,quantity,cocktailId,productId")] CocktailProduct cocktailProduct)
         {
-            if (id != cocktail.Id)
+            if (id != cocktailProduct.Id)
             {
                 return NotFound();
             }
@@ -101,12 +106,12 @@ namespace PSA_Baras.Controllers
             {
                 try
                 {
-                    _context.Update(cocktail);
+                    _context.Update(cocktailProduct);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!CocktailExists(cocktail.Id))
+                    if (!CocktailProductExists(cocktailProduct.Id))
                     {
                         return NotFound();
                     }
@@ -117,10 +122,12 @@ namespace PSA_Baras.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(cocktail);
+            ViewData["cocktailId"] = new SelectList(_context.Cocktail, "Id", "Id", cocktailProduct.cocktailId);
+            ViewData["productId"] = new SelectList(_context.Product, "Id", "Id", cocktailProduct.productId);
+            return View(cocktailProduct);
         }
 
-        // GET: Cocktails/Delete/5
+        // GET: CocktailProducts/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -128,30 +135,32 @@ namespace PSA_Baras.Controllers
                 return NotFound();
             }
 
-            var cocktail = await _context.Cocktail
+            var cocktailProduct = await _context.CocktailProduct
+                .Include(c => c.cocktail)
+                .Include(c => c.product)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (cocktail == null)
+            if (cocktailProduct == null)
             {
                 return NotFound();
             }
 
-            return View(cocktail);
+            return View(cocktailProduct);
         }
 
-        // POST: Cocktails/Delete/5
+        // POST: CocktailProducts/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var cocktail = await _context.Cocktail.FindAsync(id);
-            _context.Cocktail.Remove(cocktail);
+            var cocktailProduct = await _context.CocktailProduct.FindAsync(id);
+            _context.CocktailProduct.Remove(cocktailProduct);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool CocktailExists(int id)
+        private bool CocktailProductExists(int id)
         {
-            return _context.Cocktail.Any(e => e.Id == id);
+            return _context.CocktailProduct.Any(e => e.Id == id);
         }
     }
 }

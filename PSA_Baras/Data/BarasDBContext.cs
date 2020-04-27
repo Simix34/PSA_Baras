@@ -29,5 +29,7 @@ namespace PSA_Baras.Data
         public DbSet<Order> Order { get; set; }
 
         public DbSet<Product> Product { get; set; }
+
+        public DbSet<PSA_Baras.Models.CocktailProduct> CocktailProduct { get; set; }
     }
 }

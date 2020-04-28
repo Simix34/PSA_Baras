@@ -77,12 +77,33 @@ namespace PSA_Baras.Controllers
                 return NotFound();
             }
 
-            var cocktail = await _context.Cocktail.FindAsync(id);
+            var cocktail = await _context.Cocktail
+                .Include(o => o.cocktailProducts)
+                .ThenInclude(o => o.product)
+                .FirstOrDefaultAsync(o => o.Id == id);
             if (cocktail == null)
             {
                 return NotFound();
             }
+            Populate(cocktail);
             return View(cocktail);
+        }
+
+        private void Populate(Cocktail cocktail)
+        {
+            var allProducts = _context.Product;
+            var cocktailProducts = new HashSet<int>(cocktail.cocktailProducts.Select(c => c.Id));
+            var viewModel = new List<AssignedProductData>();
+            foreach (var product in allProducts)
+            {
+                viewModel.Add(new AssignedProductData
+                {
+                    ProductId = product.Id,
+                    Title = product.title,
+                    Assigned = cocktailProducts.Contains(product.Id)
+                });
+            }
+            ViewData["Products"] = viewModel;
         }
 
         // POST: Cocktails/Edit/5
@@ -90,7 +111,7 @@ namespace PSA_Baras.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,title,price,color,proof,category")] Cocktail cocktail)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,title,price,color,proof,category")] Cocktail cocktail, string[] selectedProducts)
         {
             if (id != cocktail.Id)
             {
@@ -101,7 +122,14 @@ namespace PSA_Baras.Controllers
             {
                 try
                 {
-                    _context.Update(cocktail);
+                    var cocktailOld = await _context.Cocktail
+                        .Include(o => o.cocktailProducts)
+                        .ThenInclude(o => o.product)
+                        .FirstOrDefaultAsync(o => o.Id == id);
+                    cocktailOld.title = cocktail.title; cocktailOld.price = cocktail.price; cocktailOld.proof = cocktail.proof;
+                    cocktailOld.color = cocktail.color; cocktailOld.category = cocktail.category;
+                    UpdateCocktailProducts(selectedProducts, cocktailOld);
+                    _context.Update(cocktailOld);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
@@ -118,6 +146,38 @@ namespace PSA_Baras.Controllers
                 return RedirectToAction(nameof(Index));
             }
             return View(cocktail);
+        }
+
+        private void UpdateCocktailProducts(string[] selectedProducts, Cocktail cocktailToUpdate)
+        {
+            if (selectedProducts == null)
+            {
+                cocktailToUpdate.cocktailProducts = new List<CocktailProduct>();
+                return;
+            }
+
+            var selectedProductsHS = new HashSet<string>(selectedProducts);
+            var instructorCourses = new HashSet<int>
+                (cocktailToUpdate.cocktailProducts.Select(c => c.product.Id));
+            foreach (var product in _context.Product)
+            {
+                if (selectedProductsHS.Contains(product.Id.ToString()))
+                {
+                    if (!instructorCourses.Contains(product.Id))
+                    {
+                        cocktailToUpdate.cocktailProducts.Add(new CocktailProduct { cocktailId = cocktailToUpdate.Id, productId = product.Id });
+                    }
+                }
+                else
+                {
+
+                    if (instructorCourses.Contains(product.Id))
+                    {
+                        CocktailProduct productToRemove = cocktailToUpdate.cocktailProducts.FirstOrDefault(i => i.productId == product.Id);
+                        _context.Remove(productToRemove);
+                    }
+                }
+            }
         }
 
         // GET: Cocktails/Delete/5

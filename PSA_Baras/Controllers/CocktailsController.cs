@@ -92,7 +92,7 @@ namespace PSA_Baras.Controllers
         private void Populate(Cocktail cocktail)
         {
             var allProducts = _context.Product;
-            var cocktailProducts = new HashSet<int>(cocktail.cocktailProducts.Select(c => c.Id));
+            var cocktailProducts = new HashSet<int>(cocktail.cocktailProducts.Select(c => c.productId));
             var viewModel = new List<AssignedProductData>();
             foreach (var product in allProducts)
             {

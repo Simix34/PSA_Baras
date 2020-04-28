@@ -50,7 +50,24 @@ namespace PSA_Baras.Controllers
         // GET: Cocktails/Create
         public IActionResult Create()
         {
+            PopulateEmpty();
             return View();
+        }
+
+        private void PopulateEmpty()
+        {
+            var allProducts = _context.Product;
+            var viewModel = new List<AssignedProductData>();
+            foreach (var product in allProducts)
+            {
+                viewModel.Add(new AssignedProductData
+                {
+                    ProductId = product.Id,
+                    Title = product.title,
+                    Assigned = false
+                });
+            }
+            ViewData["Products"] = viewModel;
         }
 
         // POST: Cocktails/Create
@@ -58,15 +75,34 @@ namespace PSA_Baras.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,title,price,color,proof,category")] Cocktail cocktail)
+        public async Task<IActionResult> Create([Bind("Id,title,price,color,proof,category")] Cocktail cocktail, string[] selectedProducts)
         {
             if (ModelState.IsValid)
             {
+                CreateCocktailProducts(selectedProducts, cocktail);
                 _context.Add(cocktail);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
             return View(cocktail);
+        }
+
+        private void CreateCocktailProducts(string[] selectedProducts, Cocktail cocktailToUpdate)
+        {
+            cocktailToUpdate.cocktailProducts = new List<CocktailProduct>();
+            if (selectedProducts == null)
+            {             
+                return;
+            }
+
+            var selectedProductsHS = new HashSet<string>(selectedProducts);
+            foreach (var product in _context.Product)
+            {
+                if (selectedProductsHS.Contains(product.Id.ToString()))
+                {
+                    cocktailToUpdate.cocktailProducts.Add(new CocktailProduct { cocktailId = cocktailToUpdate.Id, productId = product.Id });
+                }
+            }
         }
 
         // GET: Cocktails/Edit/5
@@ -157,13 +193,13 @@ namespace PSA_Baras.Controllers
             }
 
             var selectedProductsHS = new HashSet<string>(selectedProducts);
-            var instructorCourses = new HashSet<int>
+            var cocktailProducts = new HashSet<int>
                 (cocktailToUpdate.cocktailProducts.Select(c => c.product.Id));
             foreach (var product in _context.Product)
             {
                 if (selectedProductsHS.Contains(product.Id.ToString()))
                 {
-                    if (!instructorCourses.Contains(product.Id))
+                    if (!cocktailProducts.Contains(product.Id))
                     {
                         cocktailToUpdate.cocktailProducts.Add(new CocktailProduct { cocktailId = cocktailToUpdate.Id, productId = product.Id });
                     }
@@ -171,7 +207,7 @@ namespace PSA_Baras.Controllers
                 else
                 {
 
-                    if (instructorCourses.Contains(product.Id))
+                    if (cocktailProducts.Contains(product.Id))
                     {
                         CocktailProduct productToRemove = cocktailToUpdate.cocktailProducts.FirstOrDefault(i => i.productId == product.Id);
                         _context.Remove(productToRemove);

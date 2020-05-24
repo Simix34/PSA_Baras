@@ -14,6 +14,8 @@ namespace PSA_Baras.Controllers
     {
         private readonly BarasDBContext _context;
 
+        private static readonly Notifier notifier = new Notifier();
+
         public ProductsController(BarasDBContext context)
         {
             _context = context;
@@ -63,6 +65,30 @@ namespace PSA_Baras.Controllers
                 return RedirectToAction(nameof(Index));
             }
             return View(product);
+        }
+
+        // GET: Products/Order/5
+        public async Task<IActionResult> Order(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var product = await _context.Product.FindAsync(id);
+            if (product == null)
+            {
+                return NotFound();
+            }
+            return View(product);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Order(int id, [Bind("Id,title,units,color,description")] Product product)
+        {
+            notifier.SendMessage(product.title, string.Join(Environment.NewLine, product.title, product.color, product.description));
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Products/Edit/5

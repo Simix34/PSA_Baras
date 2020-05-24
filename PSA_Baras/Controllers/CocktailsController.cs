@@ -20,6 +20,8 @@ namespace PSA_Baras.Controllers
         }
 
         // GET: Cocktails
+        // showCoctails()
+        // open()
         public async Task<IActionResult> Index()
         {
             var cocktails = await _context.Cocktail
@@ -106,6 +108,8 @@ namespace PSA_Baras.Controllers
         }
 
         // GET: Cocktails/Edit/5
+        // editCocktail()
+        // open()
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -124,7 +128,7 @@ namespace PSA_Baras.Controllers
             Populate(cocktail);
             return View(cocktail);
         }
-
+        // getProducts()
         private void Populate(Cocktail cocktail)
         {
             var allProducts = _context.Product;
@@ -145,6 +149,7 @@ namespace PSA_Baras.Controllers
         // POST: Cocktails/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // submitForm()
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,title,price,color,proof,category")] Cocktail cocktail, string[] selectedProducts)
@@ -153,7 +158,7 @@ namespace PSA_Baras.Controllers
             {
                 return NotFound();
             }
-
+            // validate
             if (ModelState.IsValid)
             {
                 try
@@ -217,21 +222,32 @@ namespace PSA_Baras.Controllers
         }
 
         // GET: Cocktails/Delete/5
+        // removeCocktail()
         public async Task<IActionResult> Delete(int? id)
         {
+            //if (id == null)
+            //{
+            //    return NotFound();
+            //}
+
+            //var cocktail = await _context.Cocktail
+            //    .FirstOrDefaultAsync(m => m.Id == id);
+            //if (cocktail == null)
+            //{
+            //    return NotFound();
+            //}
+
+            //return View(cocktail);
+
             if (id == null)
             {
                 return NotFound();
             }
 
-            var cocktail = await _context.Cocktail
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (cocktail == null)
-            {
-                return NotFound();
-            }
-
-            return View(cocktail);
+            var cocktail = await _context.Cocktail.FindAsync(id);
+            _context.Cocktail.Remove(cocktail);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // POST: Cocktails/Delete/5

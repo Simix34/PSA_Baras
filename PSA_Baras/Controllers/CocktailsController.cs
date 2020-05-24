@@ -93,7 +93,7 @@ namespace PSA_Baras.Controllers
         {
             cocktailToUpdate.cocktailProducts = new List<CocktailProduct>();
             if (selectedProducts == null)
-            {             
+            {
                 return;
             }
 
@@ -105,6 +105,25 @@ namespace PSA_Baras.Controllers
                     cocktailToUpdate.cocktailProducts.Add(new CocktailProduct { cocktailId = cocktailToUpdate.Id, productId = product.Id });
                 }
             }
+        }
+
+        public async Task<IActionResult> Order(int? id)
+        {
+            if (ModelState.IsValid)
+            {
+                var cocktail = await _context.Cocktail.FindAsync(id);
+                var cartItem = new CartItem()
+                {
+                    cartId = 1,
+                    cocktailId = (int)id,
+                    count = 1,
+                    price = cocktail.price,
+                };
+                _context.Add(cartItem);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Cocktails/Edit/5

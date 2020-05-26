@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -77,14 +78,22 @@ namespace PSA_Baras.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,title,price,color,proof,category")] Cocktail cocktail, string[] selectedProducts)
+        public async Task<IActionResult> Create([Bind("Id,title,price,color,proof,category")] Cocktail cocktail, string[] selectedProducts, string create, string preview)
         {
-            if (ModelState.IsValid)
+            if (create != null)
             {
-                CreateCocktailProducts(selectedProducts, cocktail);
-                _context.Add(cocktail);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    CreateCocktailProducts(selectedProducts, cocktail);
+                    _context.Add(cocktail);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+            if(preview != null)
+            {
+                cocktail.color = ColorTranslator.ToHtml(CalculateColorFromProducts(selectedProducts));
+                return View(cocktail);
             }
             return View(cocktail);
         }
@@ -105,6 +114,51 @@ namespace PSA_Baras.Controllers
                     cocktailToUpdate.cocktailProducts.Add(new CocktailProduct { cocktailId = cocktailToUpdate.Id, productId = product.Id });
                 }
             }
+        }
+
+        private Color CalculateColorFromProducts(string[] selectedProducts)
+        {
+            if (selectedProducts == null)
+            {
+                return Color.Transparent;
+            }
+
+            string colors = "";
+            var selectedProductsHS = new HashSet<string>(selectedProducts);
+            foreach (var product in _context.Product)
+            {
+                if (selectedProductsHS.Contains(product.Id.ToString()))
+                {
+                    colors += !string.IsNullOrEmpty(product.color) ? product.color : ColorTranslator.ToHtml(Color.Transparent);
+                }
+            }
+
+            string[] colorArray = colors.Split('#',StringSplitOptions.RemoveEmptyEntries);
+            if (colorArray.Length > 1)
+            {
+                Color current = ColorTranslator.FromHtml("#"+colorArray[0]);
+                for (int i = 1; i < colorArray.Length; i++)
+                {
+                    current = Blend(current, ColorTranslator.FromHtml("#" + colorArray[i]), 0.5);
+                }
+                return current;
+            }
+            else if(colorArray.Length == 1)
+            {
+                return ColorTranslator.FromHtml("#"+colorArray[0]);
+            }
+            else
+            {
+                return Color.Transparent;
+            }
+        }
+
+        private Color Blend(Color color, Color backColor, double amount)
+        {
+            byte r = (byte)((color.R * amount) + backColor.R * (1 - amount));
+            byte g = (byte)((color.G * amount) + backColor.G * (1 - amount));
+            byte b = (byte)((color.B * amount) + backColor.B * (1 - amount));
+            return Color.FromArgb(r, g, b);
         }
 
         public async Task<IActionResult> Order(int? id)
